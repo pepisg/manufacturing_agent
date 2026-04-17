@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jlcpc-browser"
+version = "0.1.0"
+description = "JLCPCB quote agent: discover parts, PDF context, browser-use automation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "browser-use>=0.12.0",
+  "pymupdf>=1.24.0",
+]
+
+[project.scripts]
+jlcpcb-quote = "jlcpc_browser.pipeline.run:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
