@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manufacturing Agent</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <!-- PDF.js 3.x UMD build — 4.x dropped UMD and only ships ES modules. -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Manufacturing Agent</h1>
+    <div class="controls">
+      <label for="model">Model</label>
+      <select id="model"></select>
+    </div>
+  </header>
+
+  <main>
+    <section id="drop" class="drop">
+      <p><strong>Drop a SolidWorks assembly folder here</strong></p>
+      <p class="muted">or click to pick a folder</p>
+      <input id="folder" type="file" webkitdirectory directory multiple hidden />
+      <p id="upload-status" class="muted"></p>
+    </section>
+
+    <section id="chat" class="chat">
+      <div id="log" class="log"></div>
+      <form id="form" class="composer">
+        <textarea id="input" placeholder="Ask about the assembly…" rows="2"></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

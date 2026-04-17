@@ -1,0 +1,129 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #0f1115;
+  color: #e6e6e6;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #222;
+}
+h1 { font-size: 16px; margin: 0; font-weight: 600; }
+.controls { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+select {
+  background: #1a1d23;
+  color: #e6e6e6;
+  border: 1px solid #2a2f38;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 0;
+}
+.drop {
+  border-right: 1px solid #222;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.drop.hover { background: #1a1d23; }
+.muted { color: #888; font-size: 13px; }
+.chat { display: flex; flex-direction: column; min-height: 0; }
+.log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.msg {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+.msg.user { align-self: flex-end; background: #2a58c7; }
+.msg.assistant { align-self: flex-start; background: #1a1d23; border: 1px solid #2a2f38; }
+.msg.system { align-self: center; color: #888; font-size: 12px; background: none; }
+.composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #222;
+}
+textarea {
+  flex: 1;
+  resize: none;
+  background: #1a1d23;
+  color: #e6e6e6;
+  border: 1px solid #2a2f38;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+}
+button {
+  background: #2a58c7;
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+.approval {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.approval button {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+.approval .approve-yes { background: #2aa164; }
+.approval .approve-no  { background: #c74242; }
+
+.viewer {
+  margin-top: 10px;
+  background: #1a1d23;
+  border: 1px solid #2a2f38;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.viewer-title {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #bfc5cf;
+  background: #14171c;
+  border-bottom: 1px solid #2a2f38;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.viewer-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1d23;
+  overflow: hidden;
+}
+.viewer-body canvas { display: block; }
+.viewer-error {
+  color: #e6a0a0;
+  font-size: 12px;
+  padding: 10px;
+  text-align: center;
+}
