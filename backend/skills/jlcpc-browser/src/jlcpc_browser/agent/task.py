@@ -79,11 +79,11 @@ Examples: 3D printing technology/material, CNC options, PCB layer count, etc. Ma
 ### Step 3b — **Product desc** + additional info — do this **after** the file upload succeeds
 After the CAD file is attached, find the **Product desc** control (and any **parent** chained dropdowns above it if the UI requires them first).
 
-For **Product desc**:
-1. **Type** `others` into the field (to filter the list).
-2. **Wait 1 second** (use a short pause / wait action).
-3. The suggestion list / dropdown **opens automatically** — do **not** click to open it.
-4. **Click** the **others** / **Other** option in the list that is already visible (do **not** use Enter; use an explicit click).
+For **Product desc** (strict — the UI needs time after typing; **do not** rush):
+1. **One step only:** type `others` into the Product desc field. **Stop.** Do **not** press Enter, do **not** click anything in this same step.
+2. **Next step must be a real wait:** use whatever **wait / pause / sleep-for-seconds** tool your action space provides, for **at least 2.5 seconds**. This must be its **own** step — **never** bundle typing + waiting + clicking into one action list.
+3. The suggestion list opens on its own — do **not** click the field again to “open” the dropdown before the list appears.
+4. **Then** click the **others** / **Other** row in the visible list (explicit click only). If the field clears, repeat: type `others` → **separate** wait step (≥2.5s) → click **others**.
 
 **After** that, a **text box for additional information** usually appears (or becomes active). Fill it with a **short, appropriate** description from the drawing: part title or description, material, and process note (e.g. SLA, CNC) — one or two sentences, plain text.
 
@@ -99,5 +99,5 @@ Then fill remaining required fields (qty, size, tolerance, etc.) per the drawing
 Do **not** log in, **not** shipping/payment, **not** full checkout.
 
 ## Done when
-Save-to-cart succeeded **or** hard blocker. Summarize: product chosen, file(s) uploaded (names), Product desc (type others, wait 1s, click others in auto-open list), additional-info text filled, cart clicked or not.
+Save-to-cart succeeded **or** hard blocker. Summarize: product chosen, file(s) uploaded (names), Product desc (type others → **separate** wait ≥2.5s → click others), additional-info text filled, cart clicked or not.
 """

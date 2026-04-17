@@ -23,6 +23,9 @@ def build_browser_profile(*, keep_alive: bool | None = None):
     - ``JLCPCB_HEADLESS``: ``0`` / ``false`` = visible window (often fixes blank pages);
       ``1`` / ``true`` = headless; unset = browser-use default (headless if no display).
     - ``JLCPCB_MIN_PAGE_LOAD_WAIT`` / ``JLCPCB_NETWORK_IDLE_WAIT``: seconds (float).
+    - ``JLCPCB_WAIT_BETWEEN_ACTIONS``: optional seconds (float). If set, passed to browser-use as
+      ``wait_between_actions`` — adds delay after **every** action (heavy; use only if the model
+      skips explicit wait steps, e.g. after typing ``others``).
     - ``JLCPCB_DISABLE_BROWSER_EXTENSIONS``: default ``1`` (disable uBlock etc.). Set ``0`` to re-enable.
     """
     from browser_use.browser.profile import BrowserProfile
@@ -35,6 +38,9 @@ def build_browser_profile(*, keep_alive: bool | None = None):
         "wait_for_network_idle_page_load_time": float(os.environ.get("JLCPCB_NETWORK_IDLE_WAIT", "3.0")),
         "enable_default_extensions": enable_extensions,
     }
+    wba = os.environ.get("JLCPCB_WAIT_BETWEEN_ACTIONS", "").strip()
+    if wba:
+        kwargs["wait_between_actions"] = float(wba)
 
     if hl is not None and hl.strip() != "":
         lv = hl.strip().lower()
@@ -158,7 +164,9 @@ async def run_quote_agent(
         "initial_actions": initial_navigate,
         "extend_system_message": (
             "Upload only the minimum CAD file(s) required for the selected product (often one; 3D: STL or STEP per form). "
-            "Never the PDF. After upload: Product desc — type others, wait 1s, click others in the auto-open list; fill additional-info box; then SAVE TO CART."
+            "Never the PDF. Product desc: type `others` in one step only (no Enter, no click in that step); "
+            "next step MUST be a dedicated wait/pause (≥2.5s); then click others in the list — never bundle type+wait+click. "
+            "Fill additional-info; then SAVE TO CART."
         ),
     }
     if browser is not None:
