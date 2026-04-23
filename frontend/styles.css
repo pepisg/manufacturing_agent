@@ -95,6 +95,79 @@ button:disabled { opacity: 0.5; cursor: default; }
 .approval .approve-yes { background: #2aa164; }
 .approval .approve-no  { background: #c74242; }
 
+/* Rendered-markdown assistant bubbles. Tables need room, so widen these and
+   drop pre-wrap (marked emits real block elements). */
+.msg.markdown { white-space: normal; max-width: 90%; }
+.msg.markdown > :first-child { margin-top: 0; }
+.msg.markdown > :last-child { margin-bottom: 0; }
+.msg.markdown p { margin: 0 0 8px; }
+.msg.markdown h1, .msg.markdown h2, .msg.markdown h3,
+.msg.markdown h4, .msg.markdown h5, .msg.markdown h6 {
+  margin: 12px 0 6px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.msg.markdown h1 { font-size: 18px; }
+.msg.markdown h2 { font-size: 16px; }
+.msg.markdown h3 { font-size: 14px; }
+.msg.markdown ul, .msg.markdown ol { margin: 6px 0; padding-left: 22px; }
+.msg.markdown li { margin: 2px 0; }
+.msg.markdown a { color: #7fb4ff; text-decoration: none; }
+.msg.markdown a:hover { text-decoration: underline; }
+.msg.markdown strong { color: #f1f3f6; }
+.msg.markdown blockquote {
+  margin: 8px 0;
+  padding: 4px 10px;
+  border-left: 3px solid #2a2f38;
+  color: #bfc5cf;
+}
+.msg.markdown code {
+  background: #0f1115;
+  border: 1px solid #2a2f38;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.msg.markdown pre {
+  background: #0f1115;
+  border: 1px solid #2a2f38;
+  padding: 8px 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.msg.markdown pre code { border: 0; padding: 0; background: transparent; font-size: 12px; }
+.msg.markdown hr { border: 0; border-top: 1px solid #2a2f38; margin: 10px 0; }
+
+.md-table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+  border: 1px solid #2a2f38;
+  border-radius: 6px;
+  background: #14171c;
+}
+.msg.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.msg.markdown th, .msg.markdown td {
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #2a2f38;
+}
+.msg.markdown th {
+  background: #1f232b;
+  color: #d8dee8;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.msg.markdown tbody tr:nth-child(even) { background: #181b22; }
+.msg.markdown tbody tr:last-child td { border-bottom: 0; }
+.msg.markdown td a { word-break: break-word; }
+
 .viewer {
   margin-top: 10px;
   background: #1a1d23;
@@ -123,6 +196,12 @@ button:disabled { opacity: 0.5; cursor: default; }
 .viewer-body canvas { display: block; }
 .viewer-error {
   color: #e6a0a0;
+  font-size: 12px;
+  padding: 10px;
+  text-align: center;
+}
+.viewer-loading {
+  color: #bfc5cf;
   font-size: 12px;
   padding: 10px;
   text-align: center;

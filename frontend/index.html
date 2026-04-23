@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="/styles.css" />
   <!-- PDF.js 3.x UMD build — 4.x dropped UMD and only ships ES modules. -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <!-- Markdown rendering + XSS sanitization for assistant replies. -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+  <!-- three.js r147: last release that still ships UMD OrbitControls. -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- occt-import-js: OpenCascade WASM that parses STEP in the browser. -->
+  <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.22/dist/occt-import-js.js"></script>
 </head>
 <body>
   <header>

@@ -33,7 +33,23 @@ SYSTEM_PROMPT = (
     "\n"
     "When the user asks to see / open / look at / view / preview a specific "
     "drawing PDF, call `show_pdf` with its path. It renders the PDF inline "
-    "in the chat UI — call it directly instead of describing the file."
+    "in the chat UI — call it directly instead of describing the file. For "
+    "STEP files (.step/.stp), call `show_step` instead — it renders an "
+    "interactive 3D viewer inline.\n"
+    "\n"
+    "Quoting rule — READ CAREFULLY. When the user says any of 'quote', "
+    "'quote this', 'get a quote', 'price', 'how much', 'cost', 'run it', "
+    "or 'send it to JLC', the ONLY correct tools are `quote_part` (one "
+    "part) or `quote_all_classified` (the whole classified tree). These "
+    "drive a real browser against cart.jlcpcb.com and take minutes per "
+    "part. DO NOT call `find_providers` for any of those phrasings. "
+    "`find_providers` is EXCLUSIVELY for explicit asks like 'find "
+    "alternative vendors', 'other shops', 'compare suppliers', 'source "
+    "outside JLCPCB'. If the user's intent is ambiguous, ask which they "
+    "want. Optional helper: `list_classified_parts` enumerates the "
+    "classified tree. ALWAYS `ask_user_approval` before "
+    "`quote_all_classified`, and before `quote_part` unless the user "
+    "named the specific file."
 )
 
 # Curated list of models exposed to the frontend dropdown.
@@ -128,9 +144,21 @@ def chat(session: Session, user_message: str, model: str,
 
         pending_approval: dict[str, Any] | None = None
         pending_viewer: dict[str, Any] | None = None
+        pending_images: list[tuple[str, int, str]] = []
         for call in msg.tool_calls:
             json_result, raw = _run_tool(session, call.function.name,
                                          call.function.arguments)
+            if isinstance(raw, dict) and raw.get("__image__"):
+                # OpenAI rejects image_url in tool messages; send a stub here
+                # and inject the image via a user message below.
+                stub = {k: v for k, v in raw.items() if k != "data_url"}
+                stub["note"] = "Image delivered in the following user message."
+                json_result = json.dumps(stub, default=str)
+                pending_images.append((
+                    raw.get("file", "image"),
+                    int(raw.get("page", 1)),
+                    raw["data_url"],
+                ))
             session.messages.append({
                 "role": "tool",
                 "tool_call_id": call.id,
@@ -156,6 +184,21 @@ def chat(session: Session, user_message: str, model: str,
                     "title": raw.get("title"),
                     "format": raw.get("format"),
                 }
+
+        if pending_images:
+            # Full data URLs persist in session.messages — grows fast if the
+            # model renders many PDFs; acceptable for now, no pruning.
+            content: list[dict[str, Any]] = []
+            for file, page, data_url in pending_images:
+                content.append({
+                    "type": "text",
+                    "text": f"Rendered image for {file} (page {page}):",
+                })
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": data_url},
+                })
+            session.messages.append({"role": "user", "content": content})
 
         if pending_approval is not None:
             # Surface the approval question directly; don't re-ask the model.

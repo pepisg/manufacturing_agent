@@ -1,7 +1,8 @@
 """Viewer skills: when the agent wants the user to see a file, it calls
-`show_pdf`. The handler returns a sentinel dict with `__viewer__` that the
-agent loop surfaces to the frontend, which renders an inline PDF viewer
-under the assistant message.
+`show_pdf` or `show_step`. The handler returns a sentinel dict with
+`__viewer__` that the agent loop surfaces to the frontend, which renders
+the file inline under the assistant message (PDF via pdf.js, STEP via
+three.js + occt-import-js).
 """
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ from urllib.parse import quote
 from . import skill
 
 PDF_EXTS = {".pdf"}
+STEP_EXTS = {".step", ".stp"}
 
 
 def _resolve(session, relative_path: str) -> Path:
@@ -67,3 +69,35 @@ def show_pdf(session, relative_path: str) -> dict:
     }
 
 
+@skill(
+    name="show_step",
+    description=(
+        "Open a STEP file (.step/.stp) in the chat UI as an interactive 3D "
+        "viewer (rotate/pan/zoom). Call this when the user asks to 'see', "
+        "'view', 'open', 'look at', or 'preview' a specific STEP file or 3D "
+        "model. Large assemblies may take several seconds to parse in the "
+        "browser."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "relative_path": {
+                "type": "string",
+                "description": "Path to the STEP file relative to the uploaded folder.",
+            },
+        },
+        "required": ["relative_path"],
+    },
+)
+def show_step(session, relative_path: str) -> dict:
+    try:
+        path = _resolve(session, relative_path)
+    except ValueError as e:
+        return {"error": str(e)}
+    if path.suffix.lower() not in STEP_EXTS:
+        return {"error": f"Not a STEP file: {relative_path}"}
+    return {
+        "__viewer__": "step",
+        "url": _upload_url(session, relative_path),
+        "title": path.name,
+    }

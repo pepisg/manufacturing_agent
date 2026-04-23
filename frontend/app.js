@@ -23,6 +23,34 @@ function addMsg(role, text) {
   return el;
 }
 
+// Render markdown safely into an existing message bubble. Wraps tables in a
+// horizontal-scroll container so they don't break the bubble layout, and
+// forces links to open in a new tab.
+function setMarkdownContent(el, text) {
+  const src = text || "";
+  let html = src;
+  if (window.marked) {
+    window.marked.setOptions({ gfm: true, breaks: true });
+    html = window.marked.parse(src);
+  }
+  if (window.DOMPurify) {
+    html = window.DOMPurify.sanitize(html);
+  }
+  el.classList.add("markdown");
+  el.innerHTML = html;
+  el.querySelectorAll("table").forEach((t) => {
+    if (t.parentElement && t.parentElement.classList.contains("md-table-wrap")) return;
+    const wrap = document.createElement("div");
+    wrap.className = "md-table-wrap";
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+  });
+  el.querySelectorAll("a").forEach((a) => {
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener noreferrer");
+  });
+}
+
 function addApprovalButtons(msgEl) {
   const wrap = document.createElement("div");
   wrap.className = "approval";
@@ -156,11 +184,12 @@ async function sendChat(text) {
       thinking.textContent = `Error: ${data.detail || res.status}`;
       return;
     }
-    thinking.textContent = data.reply || "(empty reply)";
+    setMarkdownContent(thinking, data.reply || "(empty reply)");
     if (data.approval) addApprovalButtons(thinking);
     if (data.viewer) {
       const { kind, url, title } = data.viewer;
       if (kind === "pdf") renderPdfViewer(thinking, url, title);
+      else if (kind === "step") renderStepViewer(thinking, url, title);
     }
   } catch (err) {
     thinking.textContent = `Error: ${err}`;
@@ -233,5 +262,138 @@ function renderPdfViewer(msgEl, url, title) {
     .catch((err) => {
       showViewerError(body, `PDF render error: ${err.message || err}`);
     });
+}
+
+// Module singleton — occt-import-js is ~10MB of WASM; reuse across viewers.
+let _occtPromise = null;
+function loadOcct() {
+  if (_occtPromise) return _occtPromise;
+  if (typeof window.occtimportjs !== "function") {
+    return Promise.reject(new Error("occt-import-js failed to load"));
+  }
+  _occtPromise = window.occtimportjs({
+    locateFile: (name) =>
+      `https://cdn.jsdelivr.net/npm/occt-import-js@0.0.22/dist/${name}`,
+  });
+  return _occtPromise;
+}
+
+async function renderStepViewer(msgEl, url, title) {
+  const body = buildViewerShell(msgEl, title || "STEP");
+  body.style.width = "480px";
+  body.style.height = "360px";
+  body.style.background = "#0a0c10";
+  body.style.position = "relative";
+
+  const status = document.createElement("div");
+  status.className = "viewer-loading";
+  status.textContent = "Loading 3D viewer…";
+  body.appendChild(status);
+
+  if (!window.THREE) {
+    showViewerError(body, "three.js failed to load.");
+    return;
+  }
+
+  try {
+    const [occt, buf] = await Promise.all([
+      loadOcct(),
+      fetch(url).then((r) => {
+        if (!r.ok) throw new Error(`fetch failed: ${r.status}`);
+        return r.arrayBuffer();
+      }),
+    ]);
+
+    status.textContent = "Parsing STEP…";
+    const parsed = occt.ReadStepFile(new Uint8Array(buf), null);
+    if (!parsed || !parsed.success) {
+      throw new Error("STEP parser returned no meshes");
+    }
+
+    // Build the scene from the parsed meshes.
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0c10);
+    const group = new THREE.Group();
+    for (const mesh of parsed.meshes || []) {
+      const pos = mesh.attributes?.position?.array;
+      const idx = mesh.index?.array;
+      if (!pos || !idx) continue;
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+      if (mesh.attributes.normal?.array) {
+        geom.setAttribute(
+          "normal",
+          new THREE.Float32BufferAttribute(mesh.attributes.normal.array, 3)
+        );
+      }
+      geom.setIndex(new THREE.Uint32BufferAttribute(idx, 1));
+      if (!mesh.attributes.normal?.array) geom.computeVertexNormals();
+      const c = mesh.color || [0.72, 0.74, 0.78];
+      const mat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(c[0], c[1], c[2]),
+        metalness: 0.15,
+        roughness: 0.55,
+      });
+      group.add(new THREE.Mesh(geom, mat));
+    }
+    if (group.children.length === 0) {
+      throw new Error("No renderable geometry found");
+    }
+    scene.add(group);
+
+    // Frame the model.
+    const box = new THREE.Box3().setFromObject(group);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(1, 1, 1).multiplyScalar(maxDim);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+    fill.position.set(-1, -0.5, -1).multiplyScalar(maxDim);
+    scene.add(fill);
+
+    const width = body.clientWidth || 480;
+    const height = body.clientHeight || 360;
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      width / height,
+      Math.max(maxDim * 0.01, 0.001),
+      maxDim * 100
+    );
+    camera.position.set(
+      center.x + maxDim * 1.4,
+      center.y + maxDim * 1.0,
+      center.z + maxDim * 1.6
+    );
+    camera.lookAt(center);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    status.remove();
+    body.appendChild(renderer.domElement);
+    renderer.domElement.style.display = "block";
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.copy(center);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.update();
+
+    function tick() {
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+    tick();
+  } catch (err) {
+    showViewerError(body, `STEP render error: ${err.message || err}`);
+  }
 }
 
